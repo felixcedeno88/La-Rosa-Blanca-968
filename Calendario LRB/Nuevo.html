@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calendario Anual - La Rosa Blanca No. 968 L:. & A:.M:.</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>📅 Calendario Anual 2026</h1>
+            <h2>La Rosa Blanca No. 968 L:. & A:.M:.</h2>
+            <div class="controls">
+                <button id="prevYear" class="nav-btn">← Año Anterior</button>
+                <span id="yearDisplay" class="year-display">2026</span>
+                <button id="nextYear" class="nav-btn">Año Siguiente →</button>
+            </div>
+        </header>
+
+        <div id="calendarContainer" class="calendar-grid">
+            <!-- Calendar months will be generated here -->
+        </div>
+
+        <section class="legend">
+            <h3>Leyenda de Eventos</h3>
+            <div class="legend-items">
+                <div class="legend-item">
+                    <span class="event-type regular"></span>
+                    <label>Sesión Ordinaria</label>
+                </div>
+                <div class="legend-item">
+                    <span class="event-type special"></span>
+                    <label>Evento Especial</label>
+                </div>
+                <div class="legend-item">
+                    <span class="event-type holiday"></span>
+                    <label>Feriado</label>
+                </div>
+                <div class="legend-item">
+                    <span class="event-type initiation"></span>
+                    <label>Iniciación/Grados</label>
+                </div>
+            </div>
+        </section>
+
+        <section class="events-section">
+            <h3>Próximos Eventos</h3>
+            <div id="upcomingEvents" class="events-list">
+                <!-- Upcoming events will be listed here -->
+            </div>
+        </section>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

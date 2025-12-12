@@ -1,0 +1,11 @@
+{
+  "name": "calendario-lrb",
+  "version": "1.0.0",
+  "description": "Calendario Anual - La Rosa Blanca No. 968",
+  "scripts": {
+    "start": "npx http-server . -p 8000",
+    "serve": "npx serve ."
+  },
+  "author": "",
+  "license": "MIT"
+}
