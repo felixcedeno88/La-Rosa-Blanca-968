@@ -1,0 +1,206 @@
+// Minimal client-side calendar to match your index.html structure.
+// Place this file next to index.html and styles.css (same folder).
+
+(() => {
+  const months = [
+    'Enero','Febrero','Marzo','Abril','Mayo','Junio',
+    'Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'
+  ];
+  const weekdays = ['L','M','M','J','V','S','D']; // starting Monday
+
+  const yearDisplay = document.getElementById('yearDisplay');
+  const prevBtn = document.getElementById('prevYear');
+  const nextBtn = document.getElementById('nextYear');
+  const calendarContainer = document.getElementById('calendarContainer');
+  const upcomingContainer = document.getElementById('upcomingEvents');
+  const modal = document.getElementById('dateModal');
+  const modalBody = document.getElementById('modalBody');
+  const modalClose = document.getElementById('modalClose');
+
+  let currentYear = new Date().getFullYear();
+  // Example events array (modify or load from JSON)
+  // events: [{date: '2026-06-15', title:'Sesión Ordinaria', type:'regular', notes:''}, ...]
+  let events = [];
+
+  function formatISO(year, month, day) {
+    const mm = String(month+1).padStart(2,'0');
+    const dd = String(day).padStart(2,'0');
+    return `${year}-${mm}-${dd}`;
+  }
+
+  function findEventsFor(dateISO) {
+    return events.filter(e => e.date === dateISO);
+  }
+
+  function createMonthCard(year, monthIndex) {
+    const card = document.createElement('div');
+    card.className = 'month-card';
+    const header = document.createElement('div');
+    header.className = 'month-header';
+    header.textContent = `${months[monthIndex]} ${year}`;
+    card.appendChild(header);
+
+    // day headers
+    const monthGrid = document.createElement('div');
+    monthGrid.className = 'month-grid';
+    weekdays.forEach(w => {
+      const dh = document.createElement('div');
+      dh.className = 'day-header';
+      dh.textContent = w;
+      monthGrid.appendChild(dh);
+    });
+
+    // compute first day (adjust so Monday=0)
+    const firstDay = new Date(year, monthIndex, 1).getDay(); // 0 Sun .. 6 Sat
+    const firstDayMonStart = (firstDay + 6) % 7; // 0 = Monday
+    const daysInMonth = new Date(year, monthIndex + 1, 0).getDate();
+
+    // previous month's trailing days (optional: show blanks)
+    for (let i=0; i<firstDayMonStart; i++) {
+      const cell = document.createElement('div');
+      cell.className = 'day-cell other-month';
+      cell.textContent = '';
+      monthGrid.appendChild(cell);
+    }
+
+    // main days
+    const today = new Date();
+    for (let d=1; d<=daysInMonth; d++) {
+      const iso = formatISO(year, monthIndex, d);
+      const cell = document.createElement('div');
+      const isToday = (today.getFullYear() === year && today.getMonth() === monthIndex && today.getDate() === d);
+      const evs = findEventsFor(iso);
+      cell.className = 'day-cell' + (evs.length ? ' event' : '');
+      if (isToday) cell.classList.add('today');
+      // small weekend marker (Saturday/Sunday)
+      const weekDay = new Date(year, monthIndex, d).getDay();
+      if (weekDay === 0 || weekDay === 6) cell.classList.add('weekend');
+
+      cell.textContent = d;
+      // add additional classes for event types (if any)
+      if (evs.length) {
+        // add class for first event type for dot color
+        cell.classList.add(evs[0].type || 'regular');
+      }
+
+      cell.addEventListener('click', () => {
+        openModal(iso, evs);
+      });
+
+      monthGrid.appendChild(cell);
+    }
+
+    // trailing blanks to fill grid (so last week is complete)
+    const totalCells = firstDayMonStart + daysInMonth;
+    const trailing = (7 - (totalCells % 7)) % 7;
+    for (let i=0; i<trailing; i++) {
+      const cell = document.createElement('div');
+      cell.className = 'day-cell other-month';
+      cell.textContent = '';
+      monthGrid.appendChild(cell);
+    }
+
+    card.appendChild(monthGrid);
+    return card;
+  }
+
+  function renderYear(year) {
+    yearDisplay.textContent = year;
+    calendarContainer.innerHTML = '';
+    for (let m = 0; m < 12; m++) {
+      const card = createMonthCard(year, m);
+      calendarContainer.appendChild(card);
+    }
+    renderUpcoming();
+  }
+
+  function renderUpcoming() {
+    upcomingContainer.innerHTML = '';
+    const upcoming = events
+      .map(e => ({...e, iso: e.date}))
+      .filter(e => new Date(e.iso) >= new Date())
+      .sort((a,b) => new Date(a.iso) - new Date(b.iso))
+      .slice(0, 8);
+
+    if (!upcoming.length) {
+      const noev = document.createElement('div');
+      noev.className = 'no-events';
+      noev.textContent = 'No hay eventos próximos';
+      upcomingContainer.appendChild(noev);
+      return;
+    }
+
+    upcoming.forEach(e => {
+      const card = document.createElement('div');
+      card.className = 'event-card';
+      const dateEl = document.createElement('div');
+      dateEl.className = 'event-date';
+      dateEl.textContent = new Date(e.date).toLocaleDateString('es-ES', {day:'numeric', month:'long', year:'numeric'});
+      const title = document.createElement('div');
+      title.className = 'event-title';
+      title.textContent = e.title || 'Evento';
+      const badge = document.createElement('div');
+      badge.className = `event-type-badge ${e.type || 'regular'}`;
+      badge.textContent = (e.type || 'regular').toUpperCase();
+
+      card.appendChild(dateEl);
+      card.appendChild(title);
+      card.appendChild(badge);
+      upcomingContainer.appendChild(card);
+    });
+  }
+
+  function openModal(iso, evs) {
+    modal.setAttribute('aria-hidden', 'false');
+    modalBody.innerHTML = '';
+    const date = new Date(iso);
+    const h = document.createElement('h4');
+    h.textContent = date.toLocaleDateString('es-ES', {weekday:'long', day:'numeric', month:'long', year:'numeric'});
+    modalBody.appendChild(h);
+    if (!evs || !evs.length) {
+      const p = document.createElement('p');
+      p.textContent = 'No hay eventos para esta fecha.';
+      modalBody.appendChild(p);
+    } else {
+      evs.forEach(e => {
+        const title = document.createElement('div');
+        title.className = 'event-title';
+        title.textContent = e.title || 'Evento';
+        const notes = document.createElement('div');
+        notes.textContent = e.notes || '';
+        modalBody.appendChild(title);
+        modalBody.appendChild(notes);
+      });
+    }
+  }
+
+  function closeModal() {
+    modal.setAttribute('aria-hidden', 'true');
+  }
+
+  // Buttons
+  prevBtn.addEventListener('click', () => {
+    currentYear--;
+    renderYear(currentYear);
+  });
+  nextBtn.addEventListener('click', () => {
+    currentYear++;
+    renderYear(currentYear);
+  });
+
+  modalClose.addEventListener('click', closeModal);
+  modal.addEventListener('click', e => {
+    if (e.target === modal) closeModal();
+  });
+
+  // Example: load events from a JSON file named events.json (optional)
+  // fetch('events.json').then(r=>r.json()).then(data=>{ events = data; renderYear(currentYear); }).catch(()=>renderYear(currentYear));
+  // For now render without remote events:
+  renderYear(currentYear);
+
+  // Expose a small API to set events programmatically (from other scripts)
+  window.calendarSetEvents = function(newEvents) {
+    events = Array.isArray(newEvents) ? newEvents : [];
+    renderYear(currentYear);
+  };
+})();
